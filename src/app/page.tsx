@@ -1,101 +1,83 @@
-import Image from "next/image";
+'use client'
+
+import { useState } from 'react'
+import { QuadrantView } from '@/components/quadrant-view'
+import { ListView } from '@/components/list-view'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
+import { IdeaModal } from '@/components/idea-modal'
+import * as LucideIcons from 'lucide-react'
+
+interface Idea {
+  id: string
+  title: string
+  description: string
+  impact: number
+  effort: number
+  votes: number
+  tags: string[]
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [ideas, setIdeas] = useState<Idea[]>([])
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  const addIdea = (idea: Omit<Idea, 'id' | 'votes'>) => {
+    setIdeas([...ideas, { ...idea, id: Date.now().toString(), votes: 0 }])
+    setIsModalOpen(false)
+  }
+
+  const updateIdea = (updatedIdea: Idea) => {
+    setIdeas(ideas.map(idea => idea.id === updatedIdea.id ? updatedIdea : idea))
+  }
+
+  const voteIdea = (id: string, increment: number) => {
+    setIdeas(ideas.map(idea => 
+      idea.id === id ? { ...idea, votes: idea.votes + increment } : idea
+    ))
+  }
+
+  const exportToCSV = () => {
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + "ID,Title,Description,Impact,Effort,Votes,Tags\n"
+      + ideas.map(idea => 
+          `${idea.id},"${idea.title}","${idea.description}",${idea.impact},${idea.effort},${idea.votes},"${idea.tags.join(', ')}"`
+        ).join("\n")
+
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement("a")
+    link.setAttribute("href", encodedUri)
+    link.setAttribute("download", "ideas.csv")
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  return (
+    <main className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-4">Idea Management App</h1>
+      <Tabs defaultValue="quadrant" className="mt-6">
+        <TabsList>
+          <TabsTrigger value="quadrant">Quadrant View</TabsTrigger>
+          <TabsTrigger value="list">List View</TabsTrigger>
+        </TabsList>
+        <TabsContent value="quadrant" className="relative">
+          <QuadrantView ideas={ideas} updateIdea={updateIdea} />
+          <Button 
+            className="absolute bottom-4 right-4 rounded-full w-12 h-12"
+            onClick={() => setIsModalOpen(true)}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+            <LucideIcons.Plus className="w-6 h-6" />
+            <span className="sr-only">Add new idea</span>
+          </Button>
+        </TabsContent>
+        <TabsContent value="list">
+          <ListView ideas={ideas} voteIdea={voteIdea} />
+        </TabsContent>
+      </Tabs>
+      <Button onClick={exportToCSV} className="mt-4">Export to CSV</Button>
+      <IdeaModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={addIdea} />
+    </main>
+  )
 }
+
